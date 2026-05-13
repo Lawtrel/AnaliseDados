@@ -79,9 +79,11 @@
 
     <script>
         // --- 1. INITIALIZE SUPABASE ---
-        const SUPABASE_URL = 'https://cjtbqzcbzrxkddndobfu.supabase.co'; // Replace this!
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqdGJxemNienJ4a2RkbmRvYmZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NDc3MzIsImV4cCI6MjA5NDIyMzczMn0.agrY1BcpmHGuX7Dp_QkD_2s5RZ0AhD1B6YVpAuccihA'; // Replace this!
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_URL = 'https://cjtbqzcbzrxkddndobfu.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqdGJxemNienJ4a2RkbmRvYmZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NDc3MzIsImV4cCI6MjA5NDIyMzczMn0.agrY1BcpmHGuX7Dp_QkD_2s5RZ0AhD1B6YVpAuccihA'; 
+        
+        // CORREÇÃO: Renomeado de "supabase" para "supabaseClient" para evitar conflito com a biblioteca
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // --- DOM Elements ---
         const form = document.getElementById('article-form');
@@ -93,8 +95,8 @@
         async function fetchArticles() {
             tableBody.innerHTML = '<tr><td colspan="6" aria-busy="true">Loading...</td></tr>';
             
-            // Note: table and column names must exactly match your Supabase database (case-sensitive)
-            const { data, error } = await supabase
+            // CORREÇÃO: Usando supabaseClient
+            const { data, error } = await supabaseClient
                 .from('Article')
                 .select('*')
                 .order('ID', { ascending: false });
@@ -147,12 +149,12 @@
             };
 
             if (id) {
-                // UPDATE if ID exists in the hidden field
-                const { error } = await supabase.from('Article').update(articleData).eq('ID', id);
+                // UPDATE if ID exists in the hidden field (CORREÇÃO: Usando supabaseClient)
+                const { error } = await supabaseClient.from('Article').update(articleData).eq('ID', id);
                 if (error) alert("Error updating: " + error.message);
             } else {
-                // INSERT if no ID
-                const { error } = await supabase.from('Article').insert([articleData]);
+                // INSERT if no ID (CORREÇÃO: Usando supabaseClient)
+                const { error } = await supabaseClient.from('Article').insert([articleData]);
                 if (error) alert("Error creating: " + error.message);
             }
 
@@ -163,7 +165,8 @@
         // --- 4. DELETE ---
         window.deleteArticle = async (id) => {
             if (confirm('Are you sure you want to delete this article?')) {
-                const { error } = await supabase.from('Article').delete().eq('ID', id);
+                // CORREÇÃO: Usando supabaseClient
+                const { error } = await supabaseClient.from('Article').delete().eq('ID', id);
                 if (error) alert("Error deleting: " + error.message);
                 else fetchArticles(); // Refresh table
             }
