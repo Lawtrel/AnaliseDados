@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <title>Palavras-chave Mais Comuns</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <main class="container" style="margin-top: 40px;">
+        <nav><ul><li><a href="index.html" class="secondary">⬅ Voltar ao Menu</a></li></ul></nav>
+        <h1>🔑 Ranking de Palavras-chave</h1>
+        <p>Abaixo estão as palavras-chave mais utilizadas nos seus artigos (Top 50).</p>
+        
+        <table class="striped">
+            <thead>
+                <tr><th>Posição</th><th>Palavra-chave</th><th>Quantidade de Artigos</th></tr>
+            </thead>
+            <tbody id="lista-kws">
+                <tr><td colspan="3" aria-busy="true">Calculando ranking...</td></tr>
+            </tbody>
+        </table>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://cjtbqzcbzrxkddndobfu.supabase.co'; 
+        const SUPABASE_KEY = 'SUA_CHAVE_AQUI_NOVAMENTE';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function loadKeywords() {
+            // Pega as relações de artigo x palavra chave
+            const { data: relations } = await supabaseClient.from('Article_keyword').select('ID_Keyword');
+            const { data: keywords } = await supabaseClient.from('Keyword').select('*');
+            
+            if(!relations || !keywords) return;
+
+            // Conta quantas vezes cada ID aparece
+            const counts = {};
+            relations.forEach(r => { counts[r.ID_Keyword] = (counts[r.ID_Keyword] || 0) + 1; });
+
+            // Junta a contagem com o texto da palavra e ordena
+            let ranking = keywords.map(kw => ({
+                text: kw.Keyword,
+                count: counts[kw.ID] || 0
+            })).filter(k => k.count > 0);
+
+            ranking.sort((a, b) => b.count - a.count); // Ordena do maior pro menor
+            ranking = ranking.slice(0, 50); // Pega o Top 50
+
+            const tbody = document.getElementById('lista-kws');
+            tbody.innerHTML = '';
+            
+            ranking.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>#${index + 1}</td><td style="text-transform: capitalize;">${item.text}</td><td><b>${item.count}</b> vezes</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+        loadKeywords();
+    </script>
+</body>
+</html>
