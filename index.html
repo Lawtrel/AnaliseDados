@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnlATV_BD - Dashboard</title>
+    <!-- Pico CSS for styling -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        body { 
+            padding: 40px 20px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: var(--pico-background-color);
+        }
+        .header-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .header-section h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            color: var(--pico-primary);
+        }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        /* Custom styling for clickable cards */
+        .menu-card {
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .menu-card article {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 100%;
+            cursor: pointer;
+        }
+        .menu-card article:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-color: var(--pico-primary);
+        }
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <main class="container">
+        <!-- System Title -->
+        <header class="header-section">
+            <h1>📚 AnlATV_BD</h1>
+            <p>Database Management System</p>
+        </header>
+
+        <!-- Menu Buttons / Grid -->
+        <div class="menu-grid">
+            
+            <!-- Link to the file we created previously -->
+            <a href="artigos.html" class="menu-card">
+                <article>
+                    <span class="icon">📝</span>
+                    <h2>Artigos</h2>
+                    <p>Gerenciar artigos e publicações</p>
+                </article>
+            </a>
+
+            <!-- Placeholder for Authors -->
+            <a href="autores.html" class="menu-card">
+                <article>
+                    <span class="icon">✍️</span>
+                    <h2>Autores</h2>
+                    <p>Cadastrar pesquisadores</p>
+                </article>
+            </a>
+
+            <!-- Placeholder for Keywords -->
+            <a href="palavras-chave.html" class="menu-card">
+                <article>
+                    <span class="icon">🔑</span>
+                    <h2>Palavras chave</h2>
+                    <p>Organizar termos</p>
+                </article>
+            </a>
+
+            <!-- Placeholder for References -->
+            <a href="referencias.html" class="menu-card">
+                <article>
+                    <span class="icon">📖</span>
+                    <h2>Referências</h2>
+                    <p>Controle de bibliografia</p>
+                </article>
+            </a>
+
+        </div>
+    </main>
+
+</body>
+</html>
