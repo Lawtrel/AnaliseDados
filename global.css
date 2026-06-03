@@ -1,0 +1,57 @@
+/* global.css */
+:root {
+    --pico-primary: #2563eb; /* Azul corporativo moderno */
+    --pico-primary-background: #2563eb;
+    --pico-primary-hover: #1d4ed8;
+    --pico-background-color: #f8fafc;
+    --pico-font-family: 'Inter', system-ui, sans-serif;
+    --pico-border-radius: 0.75rem;
+}
+
+body { background-color: var(--pico-background-color); }
+
+/* Navegação Global */
+.top-nav {
+    background: white;
+    padding: 1rem 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+    border-radius: 0 0 1rem 1rem;
+}
+
+.top-nav ul { margin: 0; padding: 0; list-style: none; display: flex; gap: 1rem; align-items: center;}
+.top-nav a { color: #475569; text-decoration: none; font-weight: 500; transition: color 0.2s;}
+.top-nav a:hover { color: var(--pico-primary); }
+
+/* Cards e Tabelas */
+.card {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
+
+table { font-size: 0.9rem; }
+th { color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+td { vertical-align: middle; }
+
+/* Ações CRUD */
+.action-group { display: flex; gap: 0.5rem; }
+.btn-icon { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+
+/* Toasts (Notificações) */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #333;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    z-index: 9999;
+    transition: opacity 0.3s ease;
+}
+.toast.success { background: #10b981; }
+.toast.error { background: #ef4444; }

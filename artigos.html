@@ -1,198 +1,526 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Article Manager</title>
-    <!-- Pico CSS for instant beautiful styling -->
+    <title>Gerenciador de Artigos - Data Pipeline</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-    <!-- Supabase JS Library -->
+    <link rel="stylesheet" href="global.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { padding: 20px; }
-        .actions { display: flex; gap: 10px; }
-        .hidden { display: none; }
+        /* LAYOUT PRINCIPAL: Sidebar + Main Content */
+        body { margin: 0; overflow: hidden; }
+        
+        .app-layout {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            background-color: var(--pico-background-color);
+        }
+
+        /* SIDEBAR (Tratamento de Dados) */
+        .sidebar {
+            width: 320px;
+            background-color: white;
+            border-right: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.02);
+            z-index: 20;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .sidebar-content { padding: 1.5rem; }
+
+        .sidebar-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        /* ÁREA PRINCIPAL (Data Grid) */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #f8fafc;
+        }
+
+        .top-nav {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .grid-wrapper {
+            padding: 1.5rem;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* TABELA E GRID */
+        .database-container {
+            flex: 1;
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: auto;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .db-grid {
+            /* Largura total recalculada = 2330px */
+            width: 2330px; 
+            table-layout: fixed;
+            border-collapse: collapse;
+            margin: 0;
+            transition: width 0.3s ease; 
+        }
+
+        .db-grid th, .db-grid td {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.825rem;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+
+        .db-grid th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .col-text-truncated {
+            display: block;
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cell-abstract-expanded {
+            display: block;
+            width: 100%;
+            white-space: normal !important;
+            word-wrap: break-word;
+            line-height: 1.5;
+            color: #334155;
+            text-align: justify;
+        }
+
+        .cell-missing {
+            background-color: #fef2f2 !important; 
+            color: #ef4444;
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        /* Classe para exibir "SEM DADOS" de forma suave e elegante */
+        .cell-no-data {
+            color: #94a3b8 !important;
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        /* Classe para ocultar colunas após padronização */
+        .hide-cols {
+            display: none !important;
+        }
+
+        /* Botões da Sidebar */
+        .btn-sidebar {
+            width: 100%;
+            text-align: left;
+            justify-content: flex-start;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #334155;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .btn-sidebar:hover { background: #f1f5f9; border-color: #cbd5e1; transform: translateY(-1px); }
+        
+        .btn-danger { color: #ef4444; border-color: #fca5a5; background: #fef2f2; }
+        .btn-danger:hover { background: #ef4444; color: white; border-color: #ef4444; }
+
+        .btn-warning { color: #d97706; border-color: #fcd34d; background: #fffbeb; }
+        .btn-warning:hover { background: #d97706; color: white; border-color: #d97706; }
+
+        .btn-info { color: #0284c7; border-color: #bae6fd; background: #f0f9ff; }
+        .btn-info:hover { background: #0284c7; color: white; border-color: #0284c7; }
+
+        /* Novo estilo para o botão do DOI */
+        .btn-purple { color: #7e22ce; border-color: #e9d5ff; background: #faf5ff; }
+        .btn-purple:hover { background: #7e22ce; color: white; border-color: #7e22ce; }
+
+        #form-section { display: none; margin-bottom: 1.5rem; }
+        #form-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-
-    <main class="container">
-        <h1>📚 Article Manager</h1>
+    <div class="app-layout">
         
-        <!-- CRUD FORM -->
-        <article>
-            <header><h2 id="form-title">Add New Article</h2></header>
-            <form id="article-form">
-                <input type="hidden" id="article-id">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2 style="margin: 0; font-size: 1.5rem; color: var(--pico-primary);">Analytics Hub</h2>
+                <p style="margin: 0; font-size: 0.85rem; color: #64748b;">ETL & Data Cleansing</p>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="sidebar-section-title">Navegação</div>
+                <button class="btn-sidebar outline" onclick="window.location.href='index.html'">🏠 Voltar ao Dashboard</button>
+                <button class="btn-sidebar outline" onclick="toggleForm()">➕ Inserir Novo Registo</button>
                 
-                <div class="grid">
-                    <label>
-                        Title
-                        <input type="text" id="title" required placeholder="E.g., Intro to Databases">
-                    </label>
-                    <label>
-                        Year
-                        <input type="number" id="year" required placeholder="2024">
-                    </label>
+                <hr style="margin: 1.5rem 0; border-color: #e2e8f0;">
+
+                <div class="sidebar-section-title">Pipelines de Tratamento</div>
+                
+                <button onclick="limparDadosSemAbstract()" class="btn-sidebar outline btn-danger">
+                    🧹 Limpar Abstracts Ausentes
+                </button>
+
+                <button onclick="padronizarIdentificadores()" class="btn-sidebar outline btn-warning">
+                    ✨ Padronizar ISSN / ISBN
+                </button>
+
+                <button onclick="preencherAcesso()" class="btn-sidebar outline btn-info">
+                    🔒 Preencher Acesso Ausente
+                </button>
+
+                <button onclick="preencherDOI()" class="btn-sidebar outline btn-purple">
+                    🔗 Preencher DOI Ausente
+                </button>
+
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <nav class="top-nav">
+                <h1 style="margin: 0; font-size: 1.25rem;">🗂️ Data Grid: Artigos da Base</h1>
+                <span class="badge" style="background: #e2e8f0; color: #475569; padding: 0.4rem 0.8rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 600;">
+                    Visualização em Tempo Real
+                </span>
+            </nav>
+
+            <div class="grid-wrapper">
+                <section id="form-section" class="card" style="border-left: 4px solid var(--pico-primary);">
+                    <header style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="margin:0;">Novo Registo</h4>
+                        <button class="secondary outline" style="width: auto; padding: 0.2rem 0.5rem; margin: 0;" onclick="toggleForm()">Fechar Formulário</button>
+                    </header>
+                    
+                    <form id="article-form">
+                        <div class="grid">
+                            <label>Título * <input type="text" id="title" required></label>
+                            <label>Source Title <input type="text" id="source-title"></label>
+                        </div>
+                        <div class="grid">
+                            <label>Ano <input type="number" id="year"></label>
+                            <label>Citações <input type="number" id="quotation" value="0"></label>
+                            <label>DOI <input type="text" id="doi"></label>
+                            <label>Link Documento <input type="url" id="link"></label>
+                        </div>
+                        <div class="grid">
+                            <label>ISSN <input type="text" id="issn"></label>
+                            <label>ISBN <input type="text" id="isbn"></label>
+                            <label>Idioma <input type="text" id="language"></label>
+                        </div>
+                        <div class="grid">
+                            <label>Tipo de Documento <input type="text" id="doc-type"></label>
+                            <label>Tipo de Acesso <input type="text" id="access-type"></label>
+                        </div>
+                        <label>Abstract <textarea id="abstract" rows="3"></textarea></label>
+                        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+                            <button type="button" class="secondary" onclick="resetForm()">Limpar</button>
+                            <button type="submit" style="width: auto;">Inserir na Base</button>
+                        </div>
+                    </form>
+                </section>
+
+                <div class="database-container">
+                    <table class="db-grid" id="main-db-grid">
+                        <colgroup>
+                            <col style="width: 60px;">  <col style="width: 300px;"> <col style="width: 80px;">  <col style="width: 200px;"> <col style="width: 90px;">  <col style="width: 150px;"> <col style="width: 150px;"> <col style="width: 500px;"> <col style="width: 150px;" class="col-consolidada"> <col style="width: 150px;" class="col-bruta"> <col style="width: 150px;" class="col-bruta"> <col style="width: 100px;"> <col style="width: 150px;"> <col style="width: 100px;"> </colgroup>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Título</th>
+                                <th>Ano</th>
+                                <th>Source Title</th>
+                                <th>Citações</th>
+                                <th>DOI</th>
+                                <th>Link</th>
+                                <th>Abstract</th>
+                                
+                                <th class="col-consolidada">ISSN/ISBN</th>
+                                <th class="col-bruta">ISSN</th>
+                                <th class="col-bruta">ISBN</th>
+                                
+                                <th>Idioma</th>
+                                <th>Doc Type</th>
+                                <th>Acesso</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <tr><td colspan="14" style="text-align: center;" aria-busy="true">A sincronizar com Supabase...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
+            </div>
+        </main>
+    </div>
 
-                <div class="grid">
-                    <label>
-                        DOI
-                        <input type="text" id="doi" placeholder="10.1000/182">
-                    </label>
-                    <label>
-                        Document Type
-                        <select id="doc-type">
-                            <option value="Journal">Journal</option>
-                            <option value="Conference">Conference</option>
-                            <option value="Book">Book</option>
-                        </select>
-                    </label>
-                </div>
+    <script type="module">
+        import { supabaseClient, showToast } from './supabase-client.js';
 
-                <button type="submit" id="submit-btn">Save Article</button>
-                <button type="button" id="cancel-btn" class="secondary hidden" onclick="resetForm()">Cancel Edit</button>
-            </form>
-        </article>
-
-        <!-- DATA TABLE -->
-        <h2>Saved Articles</h2>
-        <div class="overflow-auto">
-            <table class="striped">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Title</th>
-                        <th>Year</th>
-                        <th>DOI</th>
-                        <th>Type</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body">
-                    <!-- Data will be injected here via JavaScript -->
-                </tbody>
-            </table>
-        </div>
-    </main>
-
-    <script>
-        // --- 1. INITIALIZE SUPABASE ---
-        const SUPABASE_URL = 'https://cjtbqzcbzrxkddndobfu.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqdGJxemNienJ4a2RkbmRvYmZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NDc3MzIsImV4cCI6MjA5NDIyMzczMn0.agrY1BcpmHGuX7Dp_QkD_2s5RZ0AhD1B6YVpAuccihA'; 
-        
-        // CORREÇÃO: Renomeado de "supabase" para "supabaseClient" para evitar conflito com a biblioteca
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // --- DOM Elements ---
+        const formSection = document.getElementById('form-section');
         const form = document.getElementById('article-form');
         const tableBody = document.getElementById('table-body');
-        const formTitle = document.getElementById('form-title');
-        const cancelBtn = document.getElementById('cancel-btn');
+        const dbGrid = document.getElementById('main-db-grid');
 
-        // --- 2. READ (FETCH DATA) ---
+        // Estado global para controlar exibição das colunas de ISSN/ISBN originais
+        let colunasBrutasOcultas = false;
+
+        window.toggleForm = () => {
+            formSection.classList.toggle('active');
+            if(!formSection.classList.contains('active')) resetForm();
+        };
+
+        window.resetForm = () => { form.reset(); };
+
         async function fetchArticles() {
-            tableBody.innerHTML = '<tr><td colspan="6" aria-busy="true">Loading...</td></tr>';
-            
-            // CORREÇÃO: Usando supabaseClient
-            const { data, error } = await supabaseClient
-                .from('Article')
-                .select('*')
-                .order('ID', { ascending: false });
-
+            const { data, error } = await supabaseClient.from('Article').select('*').order('ID', { ascending: false });
             if (error) {
-                console.error("Error fetching data:", error);
-                tableBody.innerHTML = `<tr><td colspan="6">Error loading data. Check console.</td></tr>`;
+                showToast("Erro ao sincronizar dados", "error");
                 return;
             }
-
-            renderTable(data);
+            renderGrid(data);
         }
 
-        // Render data into HTML table
-        function renderTable(articles) {
+        // --- PIPELINE 1: LIMPEZA DE DADOS (DELETE) ---
+        window.limparDadosSemAbstract = async () => {
+            const { data: articles, error } = await supabaseClient.from('Article').select('ID, Abstract');
+            if (error) return showToast("Erro ao ler dados.", "error");
+
+            const idsParaExcluir = articles.filter(a => !a.Abstract || a.Abstract.trim() === '').map(a => a.ID);
+
+            if (idsParaExcluir.length === 0) return showToast("Nenhum registo sem Abstract encontrado.", "success");
+
+            if (confirm(`⚠️ Excluir permanentemente ${idsParaExcluir.length} registo(s) sem Abstract?`)) {
+                const { error: deleteError } = await supabaseClient.from('Article').delete().in('ID', idsParaExcluir);
+                if (deleteError) showToast(`Erro: ${deleteError.message}`, "error");
+                else { showToast(`🧹 ${idsParaExcluir.length} registo(s) apagados.`, "success"); fetchArticles(); }
+            }
+        };
+
+        // --- PIPELINE 2: PADRONIZAÇÃO DE IDENTIFICADORES (UPDATE & HIDE) ---
+        window.padronizarIdentificadores = async () => {
+            const { data: articles, error } = await supabaseClient.from('Article').select('ID, ISSN, ISBN');
+            if (error) return showToast("Erro ao buscar dados.", "error");
+
+            const artigosParaAtualizar = articles.filter(a => 
+                (!a.ISSN || a.ISSN.trim() === '') && (a.ISBN && a.ISBN.trim() !== '')
+            );
+
+            if (artigosParaAtualizar.length > 0) {
+                const confirmacao = confirm(`✨ Substituir valores nulos de ISSN pelos dados de ISBN em ${artigosParaAtualizar.length} documento(s)?`);
+                
+                if (confirmacao) {
+                    showToast("A padronizar, aguarde...", "success");
+                    await Promise.all(artigosParaAtualizar.map(async (artigo) => {
+                        await supabaseClient.from('Article').update({ ISSN: artigo.ISBN }).eq('ID', artigo.ID);
+                    }));
+                    showToast(`✨ Sucesso! Identificadores consolidados.`, "success");
+                }
+            } else {
+                showToast("Nenhum dado precisa de padronização no banco, ocultando colunas originais...", "info");
+            }
+
+            colunasBrutasOcultas = true;
+            fetchArticles(); 
+        };
+
+        // --- PIPELINE 3: PADRONIZAR ACESSO (SEM DADOS) ---
+        window.preencherAcesso = async () => {
+            const { data: articles, error } = await supabaseClient.from('Article').select('ID, Access_Type');
+            if (error) return showToast("Erro ao buscar dados.", "error");
+
+            const artigosParaAtualizar = articles.filter(a => 
+                !a.Access_Type || a.Access_Type.trim() === '' || a.Access_Type.trim().toUpperCase() === 'AUSENTE'
+            );
+
+            if (artigosParaAtualizar.length === 0) {
+                return showToast("Todos os registros já possuem informação de Acesso.", "success");
+            }
+
+            if (confirm(`🔒 Encontrámos ${artigosParaAtualizar.length} registos sem dados de Acesso. Deseja preencher com "SEM DADOS"?`)) {
+                showToast("A preencher dados de acesso...", "success");
+                let erros = 0;
+                
+                await Promise.all(artigosParaAtualizar.map(async (artigo) => {
+                    const { err } = await supabaseClient.from('Article').update({ Access_Type: 'SEM DADOS' }).eq('ID', artigo.ID);
+                    if (err) erros++;
+                }));
+
+                if (erros > 0) showToast(`${erros} falharam ao atualizar.`, "error");
+                else showToast(`🔒 ${artigosParaAtualizar.length} registos atualizados para "SEM DADOS".`, "success");
+                
+                fetchArticles();
+            }
+        };
+
+        // --- PIPELINE 4: PADRONIZAR DOI (SEM DADOS) ---
+        window.preencherDOI = async () => {
+            const { data: articles, error } = await supabaseClient.from('Article').select('ID, DOI');
+            if (error) return showToast("Erro ao buscar dados.", "error");
+
+            const artigosParaAtualizar = articles.filter(a => 
+                !a.DOI || a.DOI.trim() === '' || a.DOI.trim().toUpperCase() === 'AUSENTE'
+            );
+
+            if (artigosParaAtualizar.length === 0) {
+                return showToast("Todos os registros já possuem informação de DOI.", "success");
+            }
+
+            if (confirm(`🔗 Encontrámos ${artigosParaAtualizar.length} registos sem dados de DOI. Deseja preencher com "SEM DADOS"?`)) {
+                showToast("A preencher dados de DOI...", "success");
+                let erros = 0;
+                
+                await Promise.all(artigosParaAtualizar.map(async (artigo) => {
+                    const { err } = await supabaseClient.from('Article').update({ DOI: 'SEM DADOS' }).eq('ID', artigo.ID);
+                    if (err) erros++;
+                }));
+
+                if (erros > 0) showToast(`${erros} falharam ao atualizar.`, "error");
+                else showToast(`🔗 ${artigosParaAtualizar.length} registos atualizados para "SEM DADOS".`, "success");
+                
+                fetchArticles();
+            }
+        };
+
+        function renderGrid(articles) {
             tableBody.innerHTML = '';
+            
+            // Controle dinâmico da largura da tabela e exibição dos cabeçalhos
+            if (colunasBrutasOcultas) {
+                dbGrid.style.width = '2030px'; 
+                document.querySelectorAll('.col-bruta').forEach(el => el.classList.add('hide-cols'));
+            } else {
+                dbGrid.style.width = '2330px'; 
+                document.querySelectorAll('.col-bruta').forEach(el => el.classList.remove('hide-cols'));
+            }
+
             if(articles.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6">No articles found. Add one above!</td></tr>';
+                tableBody.innerHTML = `<tr><td colspan="${colunasBrutasOcultas ? 12 : 14}" style="text-align:center;">Base de dados vazia.</td></tr>`;
                 return;
             }
 
             articles.forEach(article => {
                 const tr = document.createElement('tr');
+                
+                // Helper para renderizar célula com inteligência para a string 'SEM DADOS'
+                const renderCell = (value, type = 'default', linkUrl = '', isBruta = false) => {
+                    const hiddenClass = (isBruta && colunasBrutasOcultas) ? ' hide-cols' : '';
+
+                    if (value === null || value === undefined || String(value).trim() === '') {
+                        return `<td class="cell-missing${hiddenClass}"><div>[Ausente]</div></td>`;
+                    }
+                    
+                    // Tratamento visual especial caso o pipeline tenha preenchido "SEM DADOS"
+                    if (value === 'SEM DADOS') {
+                        return `<td class="${hiddenClass}"><div class="col-text-truncated cell-no-data" title="${value}">${value}</div></td>`;
+                    }
+
+                    if (type === 'abstract') {
+                        return `<td class="${hiddenClass}"><div class="cell-abstract-expanded">${value}</div></td>`;
+                    }
+                    if (type === 'link' && linkUrl && value !== 'SEM DADOS') {
+                        return `<td class="${hiddenClass}"><div class="col-text-truncated"><a href="${linkUrl}" target="_blank" title="${value}">${value}</a></div></td>`;
+                    }
+                    return `<td class="${hiddenClass}"><div class="col-text-truncated" title="${value}">${value}</div></td>`;
+                };
+
+                const valorConsolidado = article.ISSN ? article.ISSN : (article.ISBN ? article.ISBN : null);
+
                 tr.innerHTML = `
-                    <td>${article.ID}</td>
-                    <td>${article.Title || '-'}</td>
-                    <td>${article.Year || '-'}</td>
-                    <td>${article.DOI || '-'}</td>
-                    <td>${article.Document_Type || '-'}</td>
-                    <td class="actions">
-                        <button class="outline" onclick="editArticle(${article.ID}, '${article.Title}', ${article.Year}, '${article.DOI}', '${article.Document_Type}')">Edit</button>
-                        <button class="outline contrast" onclick="deleteArticle(${article.ID})">Delete</button>
-                    </td>
+                    <td><code>${article.ID}</code></td>
+                    ${renderCell(article.Title)}
+                    ${renderCell(article.Year)}
+                    ${renderCell(article.Source_Title)}
+                    <td>${article.Quotation || 0}</td>
+                    
+                    ${renderCell(article.DOI, 'link', (article.DOI && article.DOI !== 'SEM DADOS') ? `https://doi.org/${article.DOI}` : '')}
+                    
+                    ${renderCell(article.Link, 'link', article.Link)}
+                    ${renderCell(article.Abstract, 'abstract')}
+                    
+                    ${renderCell(valorConsolidado)} ${renderCell(article.ISSN, 'default', '', true)} ${renderCell(article.ISBN, 'default', '', true)} ${renderCell(article.Language)}
+                    ${renderCell(article.Document_Type)}
+                    ${renderCell(article.Access_Type)}
                 `;
                 tableBody.appendChild(tr);
             });
         }
 
-        // --- 3. CREATE OR UPDATE ---
+        // INSERÇÃO DE DADOS (Create Only)
         form.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Prevent page reload
+            e.preventDefault();
             
-            // Get values from inputs
-            const id = document.getElementById('article-id').value;
             const articleData = {
-                Title: document.getElementById('title').value,
-                Year: parseInt(document.getElementById('year').value),
-                DOI: document.getElementById('doi').value,
-                Document_Type: document.getElementById('doc-type').value
+                Title: document.getElementById('title').value || null,
+                Year: parseInt(document.getElementById('year').value) || null,
+                Source_Title: document.getElementById('source-title').value || null,
+                Quotation: parseInt(document.getElementById('quotation').value) || 0,
+                DOI: document.getElementById('doi').value || null,
+                Link: document.getElementById('link').value || null,
+                Abstract: document.getElementById('abstract').value || null,
+                ISSN: document.getElementById('issn').value || null,
+                ISBN: document.getElementById('isbn').value || null,
+                Language: document.getElementById('language').value || null,
+                Document_Type: document.getElementById('doc-type').value || null,
+                Access_Type: document.getElementById('access-type').value || null
             };
 
-            if (id) {
-                // UPDATE if ID exists in the hidden field (CORREÇÃO: Usando supabaseClient)
-                const { error } = await supabaseClient.from('Article').update(articleData).eq('ID', id);
-                if (error) alert("Error updating: " + error.message);
-            } else {
-                // INSERT if no ID (CORREÇÃO: Usando supabaseClient)
-                const { error } = await supabaseClient.from('Article').insert([articleData]);
-                if (error) alert("Error creating: " + error.message);
-            }
+            const { error } = await supabaseClient.from('Article').insert([articleData]);
 
-            resetForm();
-            fetchArticles(); // Refresh table
+            if (error) {
+                showToast(`Erro na inserção: ${error.message}`, "error");
+            } else {
+                showToast("Registo inserido com sucesso!", "success");
+                resetForm();
+                formSection.classList.remove('active');
+                fetchArticles();
+            }
         });
 
-        // --- 4. DELETE ---
-        window.deleteArticle = async (id) => {
-            if (confirm('Are you sure you want to delete this article?')) {
-                // CORREÇÃO: Usando supabaseClient
-                const { error } = await supabaseClient.from('Article').delete().eq('ID', id);
-                if (error) alert("Error deleting: " + error.message);
-                else fetchArticles(); // Refresh table
-            }
-        }
-
-        // --- Helpers ---
-        window.editArticle = (id, title, year, doi, docType) => {
-            document.getElementById('article-id').value = id;
-            document.getElementById('title').value = title !== 'null' ? title : '';
-            document.getElementById('year').value = year !== 'null' ? year : '';
-            document.getElementById('doi').value = doi !== 'null' ? doi : '';
-            document.getElementById('doc-type').value = docType !== 'null' ? docType : 'Journal';
-            
-            formTitle.innerText = "Edit Article (ID: " + id + ")";
-            cancelBtn.classList.remove('hidden');
-            window.scrollTo(0, 0);
-        }
-
-        window.resetForm = () => {
-            form.reset();
-            document.getElementById('article-id').value = '';
-            formTitle.innerText = "Add New Article";
-            cancelBtn.classList.add('hidden');
-        }
-
-        // Initialize App by fetching data
         fetchArticles();
     </script>
 </body>

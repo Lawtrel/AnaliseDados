@@ -1,150 +1,59 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AnlATV_BD - Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="global.css">
     <style>
-        /* TEMA VERMELHO E BRANCO */
-        :root {
-            --pico-primary: #e63946; /* Vermelho principal */
-            --pico-primary-background: #e63946;
-            --pico-primary-hover: #d90429; /* Vermelho escuro pro hover */
-            --pico-primary-hover-background: #d90429;
-            --pico-background-color: #f4f6f8; /* Fundo cinza bem claro para destacar os cards brancos */
-            --pico-color: #333333;
-        }
-
-        body { 
-            padding: 40px 20px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-        }
-
-        .header-section { 
-            text-align: center; 
-            margin-bottom: 4rem; 
-        }
-
-        .header-section h1 { 
-            font-size: 3.5rem; 
-            margin-bottom: 0.5rem; 
-            color: var(--pico-primary);
-            font-weight: 800;
-            letter-spacing: -1px;
-        }
-
-        .header-section p {
-            color: #666;
-            font-size: 1.2rem;
-        }
-
-        .menu-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); 
-            gap: 2rem; 
-            max-width: 1100px; 
-            width: 100%;
-        }
-
-        .menu-card { 
-            text-decoration: none; 
-            color: inherit; 
-            display: block; 
-        }
-
-        /* Estilo do Cartão Branco */
-        .menu-card article { 
-            background-color: #ffffff;
-            border-radius: 16px;
-            padding: 2.5rem 1.5rem;
-            text-align: center;
-            border: 2px solid transparent;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            transition: all 0.3s ease; 
-            height: 100%; 
-            cursor: pointer; 
-            margin: 0;
-        }
-
-        /* Efeito ao passar o mouse */
-        .menu-card article:hover { 
-            transform: translateY(-8px); 
-            box-shadow: 0 15px 30px rgba(230, 57, 70, 0.15); 
-            border-color: var(--pico-primary); 
-        }
-
-        .menu-card article h2 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-            color: #1a1a1a;
-        }
-
-        .menu-card article p {
-            color: #777;
-            font-size: 0.95rem;
-            margin: 0;
-        }
-
-        .icon { 
-            font-size: 3.5rem; 
-            margin-bottom: 1.5rem; 
-            display: block; 
-        }
-
-        /* Cartão de Importação com destaque inverso (Fundo vermelho, texto branco) */
-        .menu-card.import-card article {
-            background-color: var(--pico-primary);
-            color: white;
-            box-shadow: 0 8px 20px rgba(230, 57, 70, 0.3);
-        }
-        .menu-card.import-card article:hover {
-            background-color: var(--pico-primary-hover);
-            border-color: transparent;
-        }
-        .menu-card.import-card article h2, .menu-card.import-card article p {
-            color: white;
-        }
+        .dashboard-header { text-align: center; margin: 4rem 0; }
+        .dashboard-header h1 { font-weight: 800; color: #0f172a; font-size: 3rem; margin-bottom: 0.5rem; }
+        .dashboard-header p { color: #64748b; font-size: 1.2rem; }
+        .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .dash-card { display: block; text-decoration: none; color: inherit; transition: transform 0.2s; }
+        .dash-card article { text-align: center; padding: 2.5rem 1rem; border: none; }
+        .dash-card:hover { transform: translateY(-5px); }
+        .dash-card.primary article { background: var(--pico-primary); color: white; }
+        .dash-card.primary article p { color: #e0e7ff; }
+        .icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
     </style>
 </head>
 <body>
     <main class="container">
-        <header class="header-section">
-            <h1>📚 AnlATV_BD</h1>
-            <p>Sistema de Gerenciamento Acadêmico</p>
+        <header class="dashboard-header">
+            <h1>Analytics Hub</h1>
+            <p>Sistema de Gerenciamento de Pesquisa e Dados</p>
         </header>
 
-        <div class="menu-grid">
-            <a href="artigos.html" class="menu-card">
+        <div class="grid-cards">
+            <a href="artigos.html" class="dash-card card">
                 <article>
-                    <span class="icon">📝</span>
-                    <h2>Artigos</h2>
+                    <span class="icon">📄</span>
+                    <h3>Artigos</h3>
                     <p>Gerenciar publicações</p>
                 </article>
             </a>
-            <a href="autores.html" class="menu-card">
+            <a href="autores.html" class="dash-card card">
                 <article>
-                    <span class="icon">✍️</span>
-                    <h2>Autores</h2>
-                    <p>Ver banco de pesquisadores</p>
+                    <span class="icon">👥</span>
+                    <h3>Autores</h3>
+                    <p>Banco de pesquisadores</p>
                 </article>
             </a>
-            <a href="palavras-chave.html" class="menu-card">
+            <a href="palavras-chave.html" class="dash-card card">
                 <article>
-                    <span class="icon">🔑</span>
-                    <h2>Palavras-chave</h2>
-                    <p>Ranking de termos mais usados</p>
+                    <span class="icon">🎯</span>
+                    <h3>Palavras-chave</h3>
+                    <p>Ranking e tendências</p>
                 </article>
             </a>
-            <!-- Botão de Importar em destaque -->
-            <a href="importar.html" class="menu-card import-card">
+            <a href="importar.html" class="dash-card primary card">
                 <article>
-                    <span class="icon">📤</span>
-                    <h2>Importar CSV</h2>
-                    <p>Carregar dados do Scopus</p>
+                    <span class="icon">☁️</span>
+                    <h3 style="color: white;">Importar Dados</h3>
+                    <p>Carga via CSV do Scopus</p>
                 </article>
             </a>
         </div>
