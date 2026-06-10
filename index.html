@@ -3,60 +3,443 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnlATV_BD - Dashboard</title>
+    <title>Analytics Hub - Dashboard Integrado</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="global.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
-        .dashboard-header { text-align: center; margin: 4rem 0; }
-        .dashboard-header h1 { font-weight: 800; color: #0f172a; font-size: 3rem; margin-bottom: 0.5rem; }
-        .dashboard-header p { color: #64748b; font-size: 1.2rem; }
-        .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-        .dash-card { display: block; text-decoration: none; color: inherit; transition: transform 0.2s; }
-        .dash-card article { text-align: center; padding: 2.5rem 1rem; border: none; }
-        .dash-card:hover { transform: translateY(-5px); }
-        .dash-card.primary article { background: var(--pico-primary); color: white; }
-        .dash-card.primary article p { color: #e0e7ff; }
-        .icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+        /* =========================================
+           LAYOUT PRINCIPAL
+           ========================================= */
+        body { margin: 0; overflow: hidden; background-color: var(--pico-background-color); }
+        
+        .app-layout {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 320px;
+            background-color: white;
+            border-right: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.02);
+            z-index: 20;
+        }
+
+        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+        .sidebar-content { padding: 1.5rem; }
+        .sidebar-section-title { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.05em; margin-bottom: 1rem; }
+
+        .btn-sidebar {
+            width: 100%; text-align: left; justify-content: flex-start; padding: 0.75rem 1rem; font-size: 0.9rem;
+            margin-bottom: 0.5rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; background: white; color: #334155;
+            transition: all 0.2s ease; cursor: pointer;
+        }
+        .btn-sidebar:hover, .btn-sidebar.active { background: #f1f5f9; border-color: #cbd5e1; transform: translateY(-1px); }
+        .btn-sidebar.active { border-left: 4px solid var(--pico-primary); font-weight: 600; color: var(--pico-primary); }
+
+        /* ÁREA PRINCIPAL */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background-color: #f8fafc; }
+        .top-nav { background: white; padding: 1.5rem 2rem; border-bottom: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0; border-radius: 0; box-shadow: none; }
+        .grid-wrapper { padding: 2rem; flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+        /* KPIs */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .kpi-card { background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1.5rem; }
+        .kpi-icon { font-size: 2.5rem; background: #f1f5f9; height: 60px; width: 60px; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; }
+        .kpi-data h3 { margin: 0; font-size: 2rem; color: var(--pico-primary); font-weight: 800; line-height: 1; }
+        .kpi-data p { margin: 0; color: #64748b; font-size: 0.85rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; margin-top: 0.25rem; }
+
+        /* GRÁFICOS */
+        .charts-grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
+        
+        .chart-card {
+            background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column;
+            transition: border-color 0.2s;
+        }
+        .chart-card:hover { border-color: var(--pico-primary); }
+
+        .chart-header-row {
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+
+        .chart-card h3 { font-size: 1.1rem; color: #475569; margin-bottom: 0.25rem; font-weight: 600; }
+        .chart-card p { font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem; }
+        
+        /* Botão de Expandir */
+        .btn-expand {
+            padding: 0.2rem 0.6rem; font-size: 1.1rem; margin: 0; width: auto;
+            color: #64748b; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 0.4rem;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.4rem;
+        }
+        .btn-expand:hover { color: var(--pico-primary); border-color: var(--pico-primary); background: #eff6ff; }
+        .btn-expand span { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+
+        .chart-container { position: relative; height: 280px; width: 100%; flex: 1; }
+
+        /* ESTILOS DO MODAL DE EXPANSÃO (EXPORT) */
+        #export-modal article { max-width: 1200px; width: 95%; background: white; }
+        .export-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 1.5rem; }
+        .export-actions { display: flex; gap: 0.5rem; }
+        .btn-export-png { background: #10b981; border-color: #059669; color: white; margin: 0; padding: 0.4rem 1rem; font-size: 0.9rem; }
+        .btn-export-png:hover { background: #059669; border-color: #047857; }
+        .btn-export-pdf { background: #ef4444; border-color: #dc2626; color: white; margin: 0; padding: 0.4rem 1rem; font-size: 0.9rem; }
+        .btn-export-pdf:hover { background: #dc2626; border-color: #b91c1c; }
+
+        /* MÓDULOS */
+        .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .module-card { display: block; text-decoration: none; color: inherit; transition: transform 0.2s, box-shadow 0.2s; background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 2.5rem 1.5rem; text-align: center; }
+        .module-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #cbd5e1; }
+        .module-card.primary { background: var(--pico-primary); color: white; border-color: var(--pico-primary); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
+        .module-card.primary h3, .module-card.primary p { color: white; }
+        .module-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+
+        /* Modal Drilldown List */
+        #drilldown-modal article { max-width: 1000px; width: 100%; }
+        .modal-table th { font-size: 0.75rem; background: #f1f5f9; text-transform: uppercase; font-weight: 700; }
+        .modal-table td { font-size: 0.85rem; vertical-align: middle; }
+
+        @media (max-width: 1200px) { .charts-grid-4 { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-    <main class="container">
-        <header class="dashboard-header">
-            <h1>Analytics Hub</h1>
-            <p>Sistema de Gerenciamento de Pesquisa e Dados</p>
-        </header>
+    <div class="app-layout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2 style="margin: 0; font-size: 1.5rem; color: var(--pico-primary); font-weight: 800;">Analytics Hub</h2>
+                <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Sistema de Pesquisa</p>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="sidebar-section-title">Menu Principal</div>
+                <button class="btn-sidebar active">🏠 Dashboard Geral</button>
+                <button class="btn-sidebar" onclick="window.location.href='artigos.html'">📄 Base de Artigos</button>
+                <button class="btn-sidebar" onclick="window.location.href='autores.html'">👥 Base de Autores</button>
+                <button class="btn-sidebar" onclick="window.location.href='palavras-chave.html'">🔑 Palavras-chave</button>
+                
+                <hr style="margin: 1.5rem 0; border-color: #e2e8f0;">
+                
+                <div class="sidebar-section-title">ETL & Operações</div>
+                <button class="btn-sidebar" onclick="window.location.href='importar.html'" style="color: var(--pico-primary); border-color: #bfdbfe; background: #eff6ff;">
+                    ☁️ Importar Dataset CSV
+                </button>
+            </div>
+        </aside>
 
-        <div class="grid-cards">
-            <a href="artigos.html" class="dash-card card">
-                <article>
-                    <span class="icon">📄</span>
-                    <h3>Artigos</h3>
-                    <p>Gerenciar publicações</p>
-                </article>
-            </a>
-            <a href="autores.html" class="dash-card card">
-                <article>
-                    <span class="icon">👥</span>
-                    <h3>Autores</h3>
-                    <p>Banco de pesquisadores</p>
-                </article>
-            </a>
-            <a href="palavras-chave.html" class="dash-card card">
-                <article>
-                    <span class="icon">🎯</span>
-                    <h3>Palavras-chave</h3>
-                    <p>Ranking e tendências</p>
-                </article>
-            </a>
-            <a href="importar.html" class="dash-card primary card">
-                <article>
-                    <span class="icon">☁️</span>
-                    <h3 style="color: white;">Importar Dados</h3>
-                    <p>Carga via CSV do Scopus</p>
-                </article>
-            </a>
-        </div>
-    </main>
+        <main class="main-content">
+            <nav class="top-nav">
+                <div>
+                    <h1 style="margin: 0; font-size: 1.5rem; font-weight: 700;">Visão Geral do Sistema</h1>
+                    <p style="margin: 0; color: #64748b; font-size: 0.9rem;">Resumo analítico dos dados processados</p>
+                </div>
+                <span class="badge" id="status-badge" style="background: #dcfce7; color: #166534; padding: 0.4rem 0.8rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 600;">
+                    🟢 Sistema Online
+                </span>
+            </nav>
+
+            <div class="grid-wrapper">
+                
+                <div class="kpi-grid">
+                    <div class="kpi-card"><div class="kpi-icon">📄</div><div class="kpi-data"><h3 id="kpi-artigos" aria-busy="true"></h3><p>Artigos Indexados</p></div></div>
+                    <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-data"><h3 id="kpi-autores" aria-busy="true"></h3><p>Autores Mapeados</p></div></div>
+                    <div class="kpi-card"><div class="kpi-icon">🎯</div><div class="kpi-data"><h3 id="kpi-kws" aria-busy="true"></h3><p>Termos de Pesquisa</p></div></div>
+                </div>
+
+                <div class="charts-grid-4">
+                    <div class="chart-card">
+                        <div class="chart-header-row">
+                            <div>
+                                <h3>📅 Evolução de Publicações</h3>
+                                <p>💡 Clique nos pontos para listar os artigos</p>
+                            </div>
+                            <button class="btn-expand" onclick="window.abrirModalExportacao('chartPubAno', 'Evolução de Publicações por Ano')">⛶ <span>Expandir</span></button>
+                        </div>
+                        <div class="chart-container"><canvas id="chartPubAno"></canvas></div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header-row">
+                            <div>
+                                <h3>⭐ Citações por Ano</h3>
+                                <p>💡 Clique na barra para listar os artigos citados</p>
+                            </div>
+                            <button class="btn-expand" onclick="window.abrirModalExportacao('chartCitAno', 'Total de Citações por Ano de Publicação')">⛶ <span>Expandir</span></button>
+                        </div>
+                        <div class="chart-container"><canvas id="chartCitAno"></canvas></div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header-row">
+                            <div>
+                                <h3>📰 Top 10 Periódicos</h3>
+                                <p>💡 Clique na barra para listar da revista</p>
+                            </div>
+                            <button class="btn-expand" onclick="window.abrirModalExportacao('chartTopPeriodicos', 'Top 10 Periódicos Mais Frequentes')">⛶ <span>Expandir</span></button>
+                        </div>
+                        <div class="chart-container"><canvas id="chartTopPeriodicos"></canvas></div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header-row">
+                            <div>
+                                <h3>✍️ Top 10 Autores</h3>
+                                <p>💡 Clique na barra para listar o pesquisador</p>
+                            </div>
+                            <button class="btn-expand" onclick="window.abrirModalExportacao('chartTopAutores', 'Top 10 Autores Mais Frequentes')">⛶ <span>Expandir</span></button>
+                        </div>
+                        <div class="chart-container"><canvas id="chartTopAutores"></canvas></div>
+                    </div>
+                </div>
+
+                <h2 style="font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 1rem;">Gestão de Dados</h2>
+                <div class="modules-grid">
+                    <a href="artigos.html" class="module-card"><span class="module-icon">📊</span><h3>Artigos e Publicações</h3><p>Visualizar, editar e limpar metadados via Data Grid.</p></a>
+                    <a href="autores.html" class="module-card"><span class="module-icon">🔬</span><h3>Rede de Autores</h3><p>Consulte pesquisadores e rastreie publicações.</p></a>
+                    <a href="palavras-chave.html" class="module-card"><span class="module-icon">📈</span><h3>Análise de Tendências</h3><p>Ranking em tempo real das palavras-chave.</p></a>
+                    <a href="importar.html" class="module-card primary"><span class="module-icon">📥</span><h3>Pipeline de Importação</h3><p>Injetar dados do Scopus (.csv) direto no banco.</p></a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <dialog id="export-modal">
+        <article>
+            <div class="export-header">
+                <h3 id="export-modal-title" style="margin: 0; color: #0f172a; font-weight: 700; font-size: 1.5rem;">Visualização Expandida</h3>
+                <div class="export-actions">
+                    <button class="btn-export-png" onclick="window.baixarGraficoPNG()">🖼️ Salvar como PNG</button>
+                    <button class="btn-export-pdf" onclick="window.baixarGraficoPDF()">📄 Salvar como PDF</button>
+                    <button class="secondary outline" onclick="document.getElementById('export-modal').removeAttribute('open')" style="margin: 0; padding: 0.4rem 1rem;">✕ Fechar</button>
+                </div>
+            </div>
+            <div style="height: 65vh; width: 100%; position: relative;">
+                <canvas id="export-modal-canvas"></canvas>
+            </div>
+        </article>
+    </dialog>
+
+    <dialog id="drilldown-modal">
+        <article>
+            <header style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <h4 id="modal-title" style="margin: 0; color: var(--pico-primary);">📋 Lista de Artigos Filtrados</h4>
+                <button class="secondary outline" onclick="document.getElementById('drilldown-modal').removeAttribute('open')" style="width: auto; padding: 0.2rem 0.5rem; margin: 0;">Fechar</button>
+            </header>
+            <p style="margin-bottom: 1.5rem; font-size: 0.9rem; color: #64748b;">Origem do Filtro: <strong id="modal-subtitle" style="color: #0f172a;"></strong></p>
+            <div style="overflow-x: auto; max-height: 55vh;">
+                <table class="striped modal-table">
+                    <thead><tr><th style="width: 80px;">Ano</th><th>Título do Artigo</th><th>Revista / Fonte</th><th style="width: 100px; text-align: center;">Citações</th></tr></thead>
+                    <tbody id="modal-table-body"></tbody>
+                </table>
+            </div>
+        </article>
+    </dialog>
+
+    <script type="module">
+        import { supabaseClient } from './supabase-client.js';
+
+        Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+        Chart.defaults.color = '#64748b';
+
+        // Plugin customizado para preencher o fundo de branco antes de exportar (Essencial para PDFs e PNGs)
+        const whiteBackgroundPlugin = {
+            id: 'customCanvasBackgroundColor',
+            beforeDraw: (chart) => {
+                const {ctx} = chart;
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        };
+
+        // Objeto Global para rastrear os gráficos ativos
+        window.chartInstances = {};
+        let expandedChartInstance = null; // O gráfico que fica dentro do Modal
+
+        let gArticles = [], gRelAutores = [], gTopPeriodicos = [], gTopAutores = [];
+        const truncateText = (text, maxLength) => text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+
+        function exibirListaArtigos(tituloFiltro, artigosFiltrados) {
+            document.getElementById('modal-subtitle').innerText = tituloFiltro;
+            const tbody = document.getElementById('modal-table-body');
+            tbody.innerHTML = '';
+
+            if (artigosFiltrados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum artigo encontrado para este filtro.</td></tr>';
+            } else {
+                artigosFiltrados.forEach(art => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td><strong>${art.Year || '-'}</strong></td><td style="font-weight: 500; color: #0f172a;">${art.Title || 'Sem Título'}</td><td style="color: #475569; font-style: italic;">${art.Source_Title || '-'}</td><td style="text-align: center;"><b>${art.Quotation || 0}</b></td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+            document.getElementById('drilldown-modal').setAttribute('open', true);
+        }
+
+        async function inicializarDashboard() {
+            try {
+                const [reqArtigosCount, reqAutoresCount, reqKwsCount] = await Promise.all([
+                    supabaseClient.from('Article').select('*', { count: 'exact', head: true }),
+                    supabaseClient.from('Author').select('*', { count: 'exact', head: true }),
+                    supabaseClient.from('Keyword').select('*', { count: 'exact', head: true })
+                ]);
+
+                document.getElementById('kpi-artigos').innerText = reqArtigosCount.count || 0;
+                document.getElementById('kpi-autores').innerText = reqAutoresCount.count || 0;
+                document.getElementById('kpi-kws').innerText = reqKwsCount.count || 0;
+                document.querySelectorAll('.kpi-data h3').forEach(el => el.removeAttribute('aria-busy'));
+
+                const [reqArticles, reqRelAutores, reqAutoresData] = await Promise.all([
+                    supabaseClient.from('Article').select('ID, Title, Year, Quotation, Source_Title'),
+                    supabaseClient.from('Article_Author').select('ID_Article, ID_Author'),
+                    supabaseClient.from('Author').select('ID, Name')
+                ]);
+
+                if (!reqArticles.error) {
+                    gArticles = reqArticles.data; gRelAutores = reqRelAutores.data || [];
+                    processarGraficos(reqArticles.data, gRelAutores, reqAutoresData.data || []);
+                }
+            } catch (error) {
+                document.getElementById('status-badge').style.cssText = "background: #fee2e2; color: #991b1b; padding: 0.4rem 0.8rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 600;";
+                document.getElementById('status-badge').innerText = "🔴 Falha de Conexão";
+            }
+        }
+
+        function processarGraficos(articles, relAutores, autoresData) {
+            const mapasAnos = {}, mapaPeriodicos = {};
+            articles.forEach(art => {
+                if (art.Year) {
+                    if (!mapasAnos[art.Year]) mapasAnos[art.Year] = { pubCount: 0, citCount: 0 };
+                    mapasAnos[art.Year].pubCount += 1; mapasAnos[art.Year].citCount += (art.Quotation || 0);
+                }
+                if (art.Source_Title && art.Source_Title !== 'SEM DADOS') {
+                    mapaPeriodicos[art.Source_Title] = (mapaPeriodicos[art.Source_Title] || 0) + 1;
+                }
+            });
+
+            const mapaAutores = {};
+            relAutores.forEach(rel => { mapaAutores[rel.ID_Author] = (mapaAutores[rel.ID_Author] || 0) + 1; });
+
+            const dictNomesAutores = {};
+            autoresData.forEach(autor => { dictNomesAutores[autor.ID] = autor.Name || 'Desconhecido'; });
+
+            const anosOrdenados = Object.keys(mapasAnos).sort();
+            const dadosPubs = anosOrdenados.map(ano => mapasAnos[ano].pubCount);
+            const dadosCits = anosOrdenados.map(ano => mapasAnos[ano].citCount);
+
+            gTopPeriodicos = Object.keys(mapaPeriodicos).map(p => ({ nome: p, contagem: mapaPeriodicos[p] })).sort((a, b) => b.contagem - a.contagem).slice(0, 10);
+            gTopAutores = Object.keys(mapaAutores).map(id => ({ id: id, nome: dictNomesAutores[id], contagem: mapaAutores[id] })).sort((a, b) => b.contagem - a.contagem).slice(0, 10);
+
+            // G1
+            window.chartInstances['chartPubAno'] = new Chart(document.getElementById('chartPubAno').getContext('2d'), {
+                type: 'line',
+                data: { labels: anosOrdenados, datasets: [{ label: 'Artigos Publicados', data: dadosPubs, borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.15)', borderWidth: 3, pointBackgroundColor: '#2563eb', fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, onClick: (e, elements, chart) => { if (elements.length > 0) { exibirListaArtigos(`Cronologia ➔ ${chart.data.labels[elements[0].index]}`, gArticles.filter(a => String(a.Year) === String(chart.data.labels[elements[0].index]))); } } },
+                plugins: [whiteBackgroundPlugin]
+            });
+
+            // G2
+            window.chartInstances['chartCitAno'] = new Chart(document.getElementById('chartCitAno').getContext('2d'), {
+                type: 'bar',
+                data: { labels: anosOrdenados, datasets: [{ label: 'Total de Citações', data: dadosCits, backgroundColor: '#f59e0b', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, onClick: (e, elements, chart) => { if (elements.length > 0) { exibirListaArtigos(`Citações ➔ ${chart.data.labels[elements[0].index]}`, gArticles.filter(a => String(a.Year) === String(chart.data.labels[elements[0].index]))); } } },
+                plugins: [whiteBackgroundPlugin]
+            });
+
+            // G3
+            window.chartInstances['chartTopPeriodicos'] = new Chart(document.getElementById('chartTopPeriodicos').getContext('2d'), {
+                type: 'bar',
+                data: { labels: gTopPeriodicos.map(p => truncateText(p.nome, 30)), datasets: [{ label: 'Publicações', data: gTopPeriodicos.map(p => p.contagem), backgroundColor: '#10b981', borderRadius: 4 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { title: (ctx) => gTopPeriodicos[ctx[0].dataIndex].nome } } }, onClick: (e, elements) => { if (elements.length > 0) { const j = gTopPeriodicos[elements[0].index].nome; exibirListaArtigos(`Periódico ➔ ${j}`, gArticles.filter(a => a.Source_Title === j)); } } },
+                plugins: [whiteBackgroundPlugin]
+            });
+
+            // G4
+            window.chartInstances['chartTopAutores'] = new Chart(document.getElementById('chartTopAutores').getContext('2d'), {
+                type: 'bar',
+                data: { labels: gTopAutores.map(a => truncateText(a.nome, 25)), datasets: [{ label: 'Participações', data: gTopAutores.map(a => a.contagem), backgroundColor: '#8b5cf6', borderRadius: 4 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { title: (ctx) => gTopAutores[ctx[0].dataIndex].nome } } }, onClick: (e, elements) => { if (elements.length > 0) { const autorTarget = gTopAutores[elements[0].index]; const ids = gRelAutores.filter(rel => rel.ID_Author === autorTarget.id).map(rel => rel.ID_Article); exibirListaArtigos(`Autor(a) ➔ ${autorTarget.nome}`, gArticles.filter(a => ids.includes(a.ID))); } } },
+                plugins: [whiteBackgroundPlugin]
+            });
+        }
+
+        // ==============================================================
+        // LÓGICA DE EXPORTAÇÃO E EXPANSÃO DE GRÁFICOS
+        // ==============================================================
+        window.abrirModalExportacao = (sourceChartId, titulo) => {
+            const originalChart = window.chartInstances[sourceChartId];
+            if (!originalChart) return;
+
+            // Define o título no modal
+            document.getElementById('export-modal-title').innerText = titulo;
+            document.getElementById('export-modal').setAttribute('open', true);
+
+            const ctx = document.getElementById('export-modal-canvas').getContext('2d');
+            
+            // Destrói instância antiga do modal para não sobrepor gráficos
+            if (expandedChartInstance) expandedChartInstance.destroy();
+
+            // Clona superficialmente os dados para criar o gráfico grande no modal
+            // Removemos a função 'onClick' para que o gráfico expandido seja apenas para visualização/exportação
+            const configExpandida = {
+                type: originalChart.config.type,
+                data: originalChart.data,
+                options: Object.assign({}, originalChart.options),
+                plugins: [whiteBackgroundPlugin]
+            };
+            configExpandida.options.onClick = null; // Desativa o drill-down no modo de exportação
+
+            // Aumenta o tamanho da fonte para a versão expandida ficar mais legível no PDF/PNG
+            configExpandida.options.plugins.legend = { display: true, position: 'bottom' }; // Mostra legenda na exportação
+            
+            expandedChartInstance = new Chart(ctx, configExpandida);
+        };
+
+        window.baixarGraficoPNG = () => {
+            if(!expandedChartInstance) return;
+            const link = document.createElement('a');
+            link.download = `Analytics_Grafico_${Date.now()}.png`;
+            link.href = expandedChartInstance.toBase64Image('image/png', 1);
+            link.click();
+        };
+
+        window.baixarGraficoPDF = () => {
+            if(!expandedChartInstance) return;
+            
+            // Invoca biblioteca jsPDF via CDN
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape', 'mm', 'a4'); // A4 deitado
+            
+            // Título no PDF
+            const tituloText = document.getElementById('export-modal-title').innerText;
+            doc.setFontSize(16);
+            doc.text(tituloText, 15, 20);
+
+            // Adiciona a imagem do gráfico (Base64) gerada pelo Chart.js
+            const imgData = expandedChartInstance.toBase64Image('image/png', 1);
+            
+            // Coordenadas x, y, width, height no PDF. 
+            // A4 landscape = 297 x 210 mm
+            doc.addImage(imgData, 'PNG', 15, 30, 267, 130); 
+            
+            // Salvar e fazer download
+            doc.save(`Analytics_Grafico_${Date.now()}.pdf`);
+        };
+
+        inicializarDashboard();
+    </script>
 </body>
 </html>
