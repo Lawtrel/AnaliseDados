@@ -9,135 +9,161 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* LAYOUT PRINCIPAL: Sidebar + Main Content */
-        body { margin: 0; overflow: hidden; }
+:root {
+    /* Definição de cores comuns */
+    --pico-background-color: #0f172a; /* Cinza escuro azulado (Slate 900) */
+    --pico-surface-color: #1e293b;    /* Cinza dos painéis (Slate 800) */
+    --pico-surface-light: #334155;    /* Cinza para hover/headers (Slate 700) */
+    --pico-primary: #06b6d4;          /* Azul Turquesa */
+    --pico-primary-hover: #0891b2;    /* Turquesa Dark */
+    
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+}
+
+body { 
+    margin: 0; 
+    overflow: hidden; 
+    color: var(--text-main);
+    font-family: 'Inter', system-ui, sans-serif;
+}
         
-        .app-layout {
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-            background-color: var(--pico-background-color);
-        }
+.app-layout {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    background-color: var(--pico-background-color);
+}
 
-        /* SIDEBAR (Tratamento de Dados) */
-        .sidebar {
-            width: 320px;
-            background-color: white;
-            border-right: 1px solid #cbd5e1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.02);
-            z-index: 20;
-        }
+/* SIDEBAR (Tratamento de Dados) */
+.sidebar {
+    width: 320px;
+    background-color: var(--pico-surface-color);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.2);
+    z-index: 20;
+}
 
-        .sidebar-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            background: #f8fafc;
-        }
+.sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: #131c2e; /* Tom ligeiramente mais escuro para o topo */
+}
 
-        .sidebar-content { padding: 1.5rem; }
+.sidebar-content { padding: 1.5rem; }
 
-        .sidebar-section-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #64748b;
-            letter-spacing: 0.05em;
-            margin-bottom: 1rem;
-        }
+.sidebar-section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--pico-primary); /* Turquesa nos títulos de seção */
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
 
-        /* ÁREA PRINCIPAL (Data Grid) */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background-color: #f8fafc;
-        }
+/* ÁREA PRINCIPAL (Data Grid) */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background-color: var(--pico-background-color);
+    
+    /* Background Ondulado Sutil em formato SVG inline */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3%3Cpath fill='%231e293b' fill-opacity='0.25' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,144C672,139,768,181,864,186.7C960,192,1056,160,1152,144C1248,128,1344,128,1392,128L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: cover;
+}
 
-        .top-nav {
-            background: white;
-            padding: 1rem 2rem;
-            border-bottom: 1px solid #cbd5e1;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+.top-nav {
+    background: var(--pico-surface-color);
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
 
-        .grid-wrapper {
-            padding: 1.5rem;
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+.grid-wrapper {
+    padding: 1.5rem;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
 
-        /* TABELA E GRID */
-        .database-container {
-            flex: 1;
-            width: 100%;
-            overflow-x: auto;
-            overflow-y: auto;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.5rem;
-            background: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
+/* TABELA E GRID */
+.database-container {
+    flex: 1;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--pico-surface-color);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
 
-        .db-grid {
-            /* Largura total recalculada = 2330px */
-            width: 2330px; 
-            table-layout: fixed;
-            border-collapse: collapse;
-            margin: 0;
-            transition: width 0.3s ease; 
-        }
+.db-grid {
+    width: 2330px; 
+    table-layout: fixed;
+    border-collapse: collapse;
+    margin: 0;
+    transition: width 0.3s ease; 
+}
 
-        .db-grid th, .db-grid td {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.825rem;
-            border-bottom: 1px solid #e2e8f0;
-            border-right: 1px solid #e2e8f0;
-            vertical-align: top;
-        }
+.db-grid th, .db-grid td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.825rem;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    vertical-align: top;
+}
 
-        .db-grid th {
-            background-color: #f1f5f9;
-            color: #475569;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
+.db-grid th {
+    background-color: var(--pico-surface-light);
+    color: var(--pico-primary); /* Cabeçalho destacado em turquesa */
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
 
-        .col-text-truncated {
-            display: block;
-            width: 100%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+.db-grid td {
+    color: var(--text-main);
+}
 
-        .cell-abstract-expanded {
-            display: block;
-            width: 100%;
-            white-space: normal !important;
-            word-wrap: break-word;
-            line-height: 1.5;
-            color: #334155;
-            text-align: justify;
-        }
+.col-text-truncated {
+    display: block;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-        .cell-missing {
-            background-color: #fef2f2 !important; 
-            color: #ef4444;
-            font-style: italic;
-            font-weight: 500;
-        }
+.cell-abstract-expanded {
+    display: block;
+    width: 100%;
+    white-space: normal !important;
+    word-wrap: break-word;
+    line-height: 1.5;
+    color: #cbd5e1; /* Texto legível no fundo escuro */
+    text-align: justify;
+}
 
+/* Tratamento para dados ausentes (estilo Dark) */
+.cell-missing {
+    background-color: rgba(239, 68, 68, 0.1) !important; /* Vermelho translúcido suave */
+    color: #f87171; /* Vermelho mais claro para contraste */
+    font-style: italic;
+    font-weight: 500;
+}
         /* Classe para exibir "SEM DADOS" de forma suave e elegante */
         .cell-no-data {
             color: #94a3b8 !important;
