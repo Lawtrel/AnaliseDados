@@ -210,10 +210,8 @@ Contribuições são bem-vindas! Sinta-se à vontade para abrir issues para suge
 
 Este projeto está licenciado sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes. (Assumindo licença MIT, caso contrário, ajustar).
 
-## Autor
+## Autores
 
-**Manus AI** (Gerado para CaiqueSil)
+Leandro Alves (Lawtrel) e Caique Silva (CaiqueSil)
 
----
 
-**Nota:** Este README foi gerado automaticamente com base na análise do código-fonte do repositório. Algumas seções, como a licença e detalhes específicos de contribuição, podem precisar de ajustes manuais pelo proprietário do projeto.
