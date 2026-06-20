@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Autores - Analytics Hub</title>
+    <title>Gerenciador de Artigos - Data Pipeline</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" href="global.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-
     <style>
-        /* LAYOUT PRINCIPAL (Padrão da Aplicação) */
+        /* LAYOUT PRINCIPAL: Sidebar + Main Content */
         body { margin: 0; overflow: hidden; }
         
         .app-layout {
@@ -21,7 +18,7 @@
             background-color: var(--pico-background-color);
         }
 
-        /* SIDEBAR FIXA */
+        /* SIDEBAR (Tratamento de Dados) */
         .sidebar {
             width: 320px;
             background-color: white;
@@ -33,85 +30,159 @@
             z-index: 20;
         }
 
-        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
         .sidebar-content { padding: 1.5rem; }
-        .sidebar-section-title { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.05em; margin-bottom: 1rem; }
 
-        .btn-sidebar {
-            width: 100%; text-align: left; justify-content: flex-start; padding: 0.75rem 1rem; font-size: 0.9rem;
-            margin-bottom: 0.5rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; background: white; color: #334155;
-            transition: all 0.2s ease; cursor: pointer;
+        .sidebar-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
         }
-        .btn-sidebar:hover { background: #f1f5f9; border-color: #cbd5e1; transform: translateY(-1px); }
 
-        /* ÁREA PRINCIPAL CENTRAL */
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background-color: #f8fafc; }
-        .top-nav { background: white; padding: 1rem 2rem; border-bottom: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; }
-        .grid-wrapper { padding: 1.5rem; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        /* ÁREA PRINCIPAL (Data Grid) */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #f8fafc;
+        }
 
-        /* DATA GRID DE AUTORES */
+        .top-nav {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .grid-wrapper {
+            padding: 1.5rem;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* TABELA E GRID */
         .database-container {
-            flex: 1; width: 100%; overflow-x: auto; overflow-y: auto; border: 1px solid #cbd5e1;
-            border-radius: 0.5rem; background: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
-
-        .db-grid { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 0; }
-        .db-grid th, .db-grid td { padding: 0.75rem; font-size: 0.875rem; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; vertical-align: middle; }
-        .db-grid th { background-color: #f1f5f9; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; position: sticky; top: 0; z-index: 10; }
-
-        .btn-action {
-            padding: 0.25rem 0.75rem; font-size: 0.75rem; margin: 0; width: auto; background-color: #f0f9ff;
-            color: #0284c7; border: 1px solid #bae6fd; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s;
-        }
-        .btn-action:hover { background-color: #0284c7; color: white; }
-        .scopus-id { background: #f1f5f9; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-family: monospace; color: #475569; font-weight: 600; }
-
-        /* MODAIS */
-        #articles-modal article { max-width: 900px; width: 100%; }
-        #network-modal article { max-width: 1300px; width: 95%; }
-        
-        .modal-grid th { font-size: 0.8rem; background: #f8fafc; text-transform: uppercase; }
-        .modal-grid td { font-size: 0.85rem; }
-
-        /* ESTRUTURA DO GRAFO DIVIDIDO (2 COLUNAS) */
-        .network-split-layout {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
-            gap: 1.5rem;
-            margin-top: 0.5rem;
-        }
-
-        #network-container {
-            height: 65vh;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.5rem;
-            background-color: #fafafa;
-        }
-
-        .network-details-panel {
+            flex: 1;
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: auto;
             border: 1px solid #cbd5e1;
             border-radius: 0.5rem;
             background: white;
-            padding: 1.25rem;
-            display: flex;
-            flex-direction: column;
-            max-height: 65vh;
-            overflow-y: auto;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
-        .net-empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #94a3b8;
-            text-align: center;
-            padding: 2rem;
-            margin: auto;
+        .db-grid {
+            /* Largura total recalculada = 2330px */
+            width: 2330px; 
+            table-layout: fixed;
+            border-collapse: collapse;
+            margin: 0;
+            transition: width 0.3s ease; 
         }
 
-        .net-article-title { font-weight: 500; color: #0f172a; display: block; line-height: 1.3; font-size: 0.85rem; }
+        .db-grid th, .db-grid td {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.825rem;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+
+        .db-grid th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .col-text-truncated {
+            display: block;
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cell-abstract-expanded {
+            display: block;
+            width: 100%;
+            white-space: normal !important;
+            word-wrap: break-word;
+            line-height: 1.5;
+            color: #334155;
+            text-align: justify;
+        }
+
+        .cell-missing {
+            background-color: #fef2f2 !important; 
+            color: #ef4444;
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        /* Classe para exibir "SEM DADOS" de forma suave e elegante */
+        .cell-no-data {
+            color: #94a3b8 !important;
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        /* Classe para ocultar colunas após padronização */
+        .hide-cols {
+            display: none !important;
+        }
+
+        /* Botões da Sidebar */
+        .btn-sidebar {
+            width: 100%;
+            text-align: left;
+            justify-content: flex-start;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #334155;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .btn-sidebar:hover { background: #f1f5f9; border-color: #cbd5e1; transform: translateY(-1px); }
+        
+        .btn-danger { color: #ef4444; border-color: #fca5a5; background: #fef2f2; }
+        .btn-danger:hover { background: #ef4444; color: white; border-color: #ef4444; }
+
+        .btn-warning { color: #d97706; border-color: #fcd34d; background: #fffbeb; }
+        .btn-warning:hover { background: #d97706; color: white; border-color: #d97706; }
+
+        .btn-info { color: #0284c7; border-color: #bae6fd; background: #f0f9ff; }
+        .btn-info:hover { background: #0284c7; color: white; border-color: #0284c7; }
+
+        /* Novo estilo para o botão do DOI */
+        .btn-purple { color: #7e22ce; border-color: #e9d5ff; background: #faf5ff; }
+        .btn-purple:hover { background: #7e22ce; color: white; border-color: #7e22ce; }
+
+        #form-section { display: none; margin-bottom: 1.5rem; }
+        #form-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
